@@ -10,11 +10,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -24,6 +27,8 @@ public class MainActivity extends AppCompatActivity {
     Button button;
     EditText editText;
     ListView listView;
+    List<Product> products = new ArrayList<>();
+    ArrayAdapter<Product> arrayAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
                 ShoppingDatabase.class,
                 "Shopping_database").addCallback(callback).build();
 
+        getAllProductFromDatabaseInBackground();
         button.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
@@ -54,6 +60,34 @@ public class MainActivity extends AppCompatActivity {
                         String productName = editText.getText().toString();
                         Product product = new Product(productName,10);
                         insertNewProductToDabaseInBackGround(product);
+                    }
+                }
+        );
+    }
+    private void showProductsInListView(){
+        arrayAdapter = new ArrayAdapter<>(
+                getApplicationContext(),
+                android.R.layout.simple_list_item_1,
+                products
+        );
+        listView.setAdapter(arrayAdapter);
+    }
+    private void  getAllProductFromDatabaseInBackground(){
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        Handler handler =new Handler(Looper.getMainLooper());
+        executorService.execute(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        products = database.getProductDAO().getAllProduct();
+                        handler.post(
+                                new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        showProductsInListView();
+                                    }
+                                }
+                        );
                     }
                 }
         );
